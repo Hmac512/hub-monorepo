@@ -240,6 +240,7 @@ export const validateVerificationAddEthAddressSignature = async (
   body: protobufs.VerificationAddEthAddressBody,
   fid: number,
   network: protobufs.FarcasterNetwork,
+  checkEIP1271?:boolean
 ): HubAsyncResult<Uint8Array> => {
   const reconstructedClaim = makeVerificationEthAddressClaim(fid, body.address, network, body.blockHash);
   if (reconstructedClaim.isErr()) {
@@ -253,7 +254,17 @@ export const validateVerificationAddEthAddressSignature = async (
   );
 
   if (verificationResult.isErr()) {
-    return err(verificationResult.error);
+    if (checkEIP1271) {
+      // If the ECDSA signature fails, and we want to support smart contract wallets,
+      // we need to make a call to a node to verify the signature in the EVM through the RPC url.
+      // Ideally there should be a helper function on the IdRegistry that just takes a fid, hash, sig 
+      // and returns a boolean isValidSignature.
+       
+
+      return err(verificationResult.error);
+    } else {
+      return err(verificationResult.error);
+    }
   }
 
   if (!verificationResult.value) {
