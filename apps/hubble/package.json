@@ -28,7 +28,8 @@
     "profile": "node --max-old-space-size=4096 build/cli.js profile",
     "status": "node build/cli.js status",
     "test": "NODE_OPTIONS=\"--experimental-vm-modules --max-old-space-size=4096\" jest",
-    "test:ci": "ENVIRONMENT=test NODE_OPTIONS=--experimental-vm-modules jest --ci --forceExit --coverage"
+    "test:ci": "ENVIRONMENT=test NODE_OPTIONS=--experimental-vm-modules jest --ci --forceExit --coverage",
+    "postinstall": "patch-package"
   },
   "devDependencies": {
     "@libp2p/interface-mocks": "^12.0.1",
@@ -48,10 +49,11 @@
     "progress": "~2.0.3",
     "rome-config-custom": "*",
     "ts-mockito": "~2.6.1",
-    "tsx": "~3.12.5"
+    "tsx": "~3.12.5",
+    "patch-package": "^8.0.0"
   },
   "dependencies": {
-    "@chainsafe/libp2p-gossipsub": "^9.0.0",
+    "@chainsafe/libp2p-gossipsub": "^10.0.0",
     "@chainsafe/libp2p-noise": "^12.0.0",
     "@faker-js/faker": "~7.6.0",
     "@farcaster/hub-nodejs": "^0.9.1",

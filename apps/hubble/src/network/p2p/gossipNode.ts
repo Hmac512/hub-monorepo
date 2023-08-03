@@ -635,17 +635,18 @@ export class GossipNode extends TypedEmitter<NodeEvents> {
         transports: [tcp()],
         streamMuxers: [mplex()],
         connectionEncryption: [noise()],
-        //@ts-ignore
-        peerDiscovery: [pubsubPeerDiscovery({ topics: [peerDiscoveryTopic] })],
+
+        peerDiscovery: [
+          //@ts-ignore
+          pubsubPeerDiscovery({ topics: [peerDiscoveryTopic] }),
+        ],
 
         services: {
-          //@ts-ignore
           pubsub: gossip,
         },
       }),
 
       (e) => {
-        console.error(e);
         return new HubError("unavailable", {
           message: "failed to create libp2p node",
           cause: e as Error,
