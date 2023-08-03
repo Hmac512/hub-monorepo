@@ -359,12 +359,12 @@ export class GossipNode extends TypedEmitter<NodeEvents> {
     );
     try {
       const conn = await this._node?.dial(address);
-
       if (conn) {
         log.info(
           { identity: this.identity, address },
           `Connected to peer at address: ${address}`
         );
+        this.addPeerToAddressBook(conn.remotePeer, address);
         return ok(undefined);
       }
       // rome-ignore lint/suspicious/noExplicitAny: error catching

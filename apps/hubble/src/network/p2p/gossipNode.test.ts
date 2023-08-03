@@ -49,7 +49,8 @@ describe("GossipNode", () => {
     const error = (await node.start([], options))._unsafeUnwrapErr();
 
     expect(error.errCode).toEqual("unavailable");
-    expect(error.message).toMatch("invalid multiaddr");
+    //@ts-ignore
+    expect(error.cause.code).toMatch("ERR_NO_VALID_ADDRESSES");
     expect(node.isStarted()).toBeFalsy();
     await node.stop();
   });
@@ -114,9 +115,11 @@ describe("GossipNode", () => {
     try {
       const dialResult = await node1.connect(node2);
       expect(dialResult.isOk()).toBeTruthy();
+      expect(node1.peerId).toBeTruthy();
+      expect(node2.peerId).toBeTruthy();
 
-      let other = await node1.addressBook?.get(node2.peerId as PeerId);
-      expect(other?.id).toEqual(1);
+      const other = await node1.addressBook?.get(node2.peerId as PeerId);
+      expect(other?.id.toString()).toEqual(node2.identity);
 
       await node1.removePeerFromAddressBook(node2.peerId as PeerId);
 
@@ -124,11 +127,8 @@ describe("GossipNode", () => {
       await sleep(1000);
 
       // Make sure the connection is closed
-      other = await node1.addressBook?.get(node2.peerId as PeerId);
-      expect(other).toEqual([]);
-
-      other = await node2.addressBook?.get(node1.peerId as PeerId);
-      expect(other).toEqual([]);
+      expect(await node1.addressBook?.has(node2.peerId as PeerId)).toBeFalsy();
+      expect(await node2.addressBook?.has(node1.peerId as PeerId)).toBeFalsy();
     } finally {
       await node1.stop();
       await node2.stop();
