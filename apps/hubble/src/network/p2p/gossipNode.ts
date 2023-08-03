@@ -384,7 +384,7 @@ export class GossipNode extends TypedEmitter<NodeEvents> {
     return (
       this._node
         ?.getConnections()
-        .some((conn) => conn.stat.direction === "inbound") ?? false
+        .some((conn) => conn.direction === "inbound") ?? false
     );
   }
 
@@ -394,7 +394,7 @@ export class GossipNode extends TypedEmitter<NodeEvents> {
         {
           peer: event.detail.remotePeer,
           addrs: event.detail.remoteAddr,
-          type: event.detail.stat.direction,
+          type: event.detail.status,
         },
         "P2P Connection established"
       );
@@ -635,8 +635,11 @@ export class GossipNode extends TypedEmitter<NodeEvents> {
         transports: [tcp()],
         streamMuxers: [mplex()],
         connectionEncryption: [noise()],
+        //@ts-ignore
         peerDiscovery: [pubsubPeerDiscovery({ topics: [peerDiscoveryTopic] })],
+
         services: {
+          //@ts-ignore
           pubsub: gossip,
         },
       }),
