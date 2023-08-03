@@ -50,7 +50,9 @@ describe("gossip network tests", () => {
       // Sleep 5 heartbeats to let the gossipsub network form
       await sleep(PROPAGATION_DELAY);
 
-      nodes.map((n) => expect(n.gossip?.getPeers().length).toBeGreaterThanOrEqual(1));
+      nodes.map((n) => {
+        expect(n.gossip?.getPeers().length).toBeGreaterThanOrEqual(1);
+      });
 
       // Add listeners that receive new GossipMessages and push them to the MessageStore
       nodes.forEach((n) => {
@@ -72,7 +74,9 @@ describe("gossip network tests", () => {
 
       // Create a message and send it to a random node
       const message = await NetworkFactories.GossipMessage.create();
-      const randomNode = nodes[Math.floor(Math.random() * nodes.length)] as GossipNode;
+      const randomNode = nodes[
+        Math.floor(Math.random() * nodes.length)
+      ] as GossipNode;
       const publishResult = await randomNode.publish(message);
       expect(publishResult.length).toBe(1);
       expect(publishResult[0]?.isOk()).toBeTruthy();
@@ -81,7 +85,9 @@ describe("gossip network tests", () => {
       await sleep(PROPAGATION_DELAY);
 
       // Assert that every node except the sender has pushed the message into its MessageStore
-      const nonSenderNodes = nodes.filter((n) => n.peerId?.toString() !== randomNode.peerId?.toString());
+      const nonSenderNodes = nodes.filter(
+        (n) => n.peerId?.toString() !== randomNode.peerId?.toString()
+      );
 
       nonSenderNodes.map((n) => {
         const topics = messageStore.get(n.peerId?.toString() ?? "");
@@ -92,6 +98,6 @@ describe("gossip network tests", () => {
         expect(topicMessages[0]).toEqual(message);
       });
     },
-    TEST_TIMEOUT_LONG,
+    TEST_TIMEOUT_LONG
   );
 });

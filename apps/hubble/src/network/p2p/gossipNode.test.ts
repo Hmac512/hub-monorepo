@@ -30,7 +30,9 @@ describe("GossipNode", () => {
     const error = (await node.start([], options))._unsafeUnwrapErr();
 
     expect(error.errCode).toEqual("unavailable");
-    expect(error.message).toMatch("unexpected multiaddr transport/port information");
+    expect(error.message).toMatch(
+      "unexpected multiaddr transport/port information"
+    );
     expect(node.isStarted()).toBeFalsy();
     await node.stop();
   });
@@ -38,12 +40,17 @@ describe("GossipNode", () => {
   test("start fails if multiaddr format is invalid", async () => {
     const node = new GossipNode(db);
     // an IPv6 being supplied as an IPv4
-    const options = { ipMultiAddr: "/ip4/2600:1700:6cf0:990:2052:a166:fb35:830a" };
-    expect((await node.start([], options))._unsafeUnwrapErr().errCode).toEqual("unavailable");
+    const options = {
+      ipMultiAddr: "/ip4/2600:1700:6cf0:990:2052:a166:fb35:830a",
+    };
+    expect((await node.start([], options))._unsafeUnwrapErr().errCode).toEqual(
+      "unavailable"
+    );
     const error = (await node.start([], options))._unsafeUnwrapErr();
 
     expect(error.errCode).toEqual("unavailable");
-    expect(error.message).toMatch("invalid multiaddr");
+    //@ts-ignore
+    expect(error.cause.code).toMatch("ERR_NO_VALID_ADDRESSES");
     expect(node.isStarted()).toBeFalsy();
     await node.stop();
   });
@@ -95,7 +102,7 @@ describe("GossipNode", () => {
         await node3.stop();
       }
     },
-    TEST_TIMEOUT_SHORT,
+    TEST_TIMEOUT_SHORT
   );
 
   test("removing from addressbook hangs up connection", async () => {
@@ -108,9 +115,11 @@ describe("GossipNode", () => {
     try {
       const dialResult = await node1.connect(node2);
       expect(dialResult.isOk()).toBeTruthy();
+      expect(node1.peerId).toBeTruthy();
+      expect(node2.peerId).toBeTruthy();
 
-      let other = await node1.addressBook?.get(node2.peerId as PeerId);
-      expect(other?.length).toEqual(1);
+      const other = await node1.addressBook?.get(node2.peerId as PeerId);
+      expect(other?.id.toString()).toEqual(node2.identity);
 
       await node1.removePeerFromAddressBook(node2.peerId as PeerId);
 
@@ -118,11 +127,8 @@ describe("GossipNode", () => {
       await sleep(1000);
 
       // Make sure the connection is closed
-      other = await node1.addressBook?.get(node2.peerId as PeerId);
-      expect(other).toEqual([]);
-
-      other = await node2.addressBook?.get(node1.peerId as PeerId);
-      expect(other).toEqual([]);
+      expect(await node1.addressBook?.has(node2.peerId as PeerId)).toBeFalsy();
+      expect(await node2.addressBook?.has(node1.peerId as PeerId)).toBeFalsy();
     } finally {
       await node1.stop();
       await node2.stop();
@@ -145,15 +151,23 @@ describe("GossipNode", () => {
     beforeAll(async () => {
       peerId = await createEd25519PeerId();
       const signerKey = (await signer.getSignerKey())._unsafeUnwrap();
-      const custodySignerKey = (await custodySigner.getSignerKey())._unsafeUnwrap();
-      custodyEvent = Factories.IdRegistryEvent.build({ fid, to: custodySignerKey });
+      const custodySignerKey = (
+        await custodySigner.getSignerKey()
+      )._unsafeUnwrap();
+      custodyEvent = Factories.IdRegistryEvent.build({
+        fid,
+        to: custodySignerKey,
+      });
 
       signerAdd = await Factories.SignerAddMessage.create(
         { data: { fid, network, signerAddBody: { signer: signerKey } } },
-        { transient: { signer: custodySigner } },
+        { transient: { signer: custodySigner } }
       );
 
-      castAdd = await Factories.CastAddMessage.create({ data: { fid, network } }, { transient: { signer } });
+      castAdd = await Factories.CastAddMessage.create(
+        { data: { fid, network } },
+        { transient: { signer } }
+      );
     });
 
     test("gossip messages only from rpc", async () => {
@@ -180,7 +194,10 @@ describe("GossipNode", () => {
 
       // Directly merged messages don't gossip
       numMessagesGossiped = 0;
-      const castAdd2 = await Factories.CastAddMessage.create({ data: { fid, network } }, { transient: { signer } });
+      const castAdd2 = await Factories.CastAddMessage.create(
+        { data: { fid, network } },
+        { transient: { signer } }
+      );
       await hub.submitMessage(castAdd2);
       expect(numMessagesGossiped).toEqual(0);
 
@@ -255,26 +272,40 @@ describe("GossipNode", () => {
         topics: ["foobar"],
         peerId: peerId.toBytes(),
       });
-      expect(GossipNode.decodeMessage(GossipNode.encodeMessage(gossipMessage)._unsafeUnwrap()).isOk()).toBeTruthy();
+      expect(
+        GossipNode.decodeMessage(
+          GossipNode.encodeMessage(gossipMessage)._unsafeUnwrap()
+        ).isOk()
+      ).toBeTruthy();
 
       gossipMessage = GossipMessage.create({
         message: castAdd,
         topics: ["foobar"],
         peerId: peerId.toBytes(),
       });
-      expect(GossipNode.decodeMessage(GossipNode.encodeMessage(gossipMessage)._unsafeUnwrap()).isOk()).toBeTruthy();
+      expect(
+        GossipNode.decodeMessage(
+          GossipNode.encodeMessage(gossipMessage)._unsafeUnwrap()
+        ).isOk()
+      ).toBeTruthy();
 
       gossipMessage = GossipMessage.create({
         idRegistryEvent: custodyEvent,
         topics: ["foobar"],
         peerId: peerId.toBytes(),
       });
-      expect(GossipNode.decodeMessage(GossipNode.encodeMessage(gossipMessage)._unsafeUnwrap()).isOk()).toBeTruthy();
+      expect(
+        GossipNode.decodeMessage(
+          GossipNode.encodeMessage(gossipMessage)._unsafeUnwrap()
+        ).isOk()
+      ).toBeTruthy();
     });
 
     test("Gossip Message decode fails for invalid buffers", async () => {
       expect(GossipNode.decodeMessage(new Uint8Array()).isErr()).toBeTruthy();
-      expect(GossipNode.decodeMessage(Message.encode(castAdd).finish()).isErr()).toBeTruthy();
+      expect(
+        GossipNode.decodeMessage(Message.encode(castAdd).finish()).isErr()
+      ).toBeTruthy();
 
       let gossipMessage = GossipMessage.create({
         message: castAdd,
@@ -282,7 +313,11 @@ describe("GossipNode", () => {
         topics: [],
         peerId: peerId.toBytes(),
       });
-      expect(GossipNode.decodeMessage(GossipNode.encodeMessage(gossipMessage)._unsafeUnwrap()).isErr()).toBeTruthy();
+      expect(
+        GossipNode.decodeMessage(
+          GossipNode.encodeMessage(gossipMessage)._unsafeUnwrap()
+        ).isErr()
+      ).toBeTruthy();
 
       gossipMessage = GossipMessage.create({
         message: castAdd,
@@ -290,7 +325,11 @@ describe("GossipNode", () => {
         // invalid peerIds are not allowed
         peerId: new Uint8Array(),
       });
-      expect(GossipNode.decodeMessage(GossipNode.encodeMessage(gossipMessage)._unsafeUnwrap()).isErr()).toBeTruthy();
+      expect(
+        GossipNode.decodeMessage(
+          GossipNode.encodeMessage(gossipMessage)._unsafeUnwrap()
+        ).isErr()
+      ).toBeTruthy();
 
       gossipMessage = GossipMessage.create({
         message: castAdd,
@@ -299,7 +338,11 @@ describe("GossipNode", () => {
         // invalid versions are not allowed
         version: 12345 as GossipVersion,
       });
-      expect(GossipNode.decodeMessage(GossipNode.encodeMessage(gossipMessage)._unsafeUnwrap()).isErr()).toBeTruthy();
+      expect(
+        GossipNode.decodeMessage(
+          GossipNode.encodeMessage(gossipMessage)._unsafeUnwrap()
+        ).isErr()
+      ).toBeTruthy();
     });
   });
 });

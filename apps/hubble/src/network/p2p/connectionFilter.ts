@@ -1,7 +1,8 @@
-import { ConnectionGater, MultiaddrConnection } from "@libp2p/interface-connection";
+import { ConnectionGater } from "@libp2p/interface/connection-gater";
 import { PeerId } from "@libp2p/interface-peer-id";
 import { Multiaddr } from "@multiformats/multiaddr";
 import { logger } from "../../utils/logger.js";
+import { MultiaddrConnection } from "@libp2p/interface/connection";
 
 const log = logger.child({
   component: "ConnectionFilter",
@@ -36,55 +37,90 @@ export class ConnectionFilter implements ConnectionGater {
     return deny;
   };
 
-  denyDialMultiaddr = async (peerId: PeerId, _multiaddr: Multiaddr): Promise<boolean> => {
-    const deny = this.shouldDeny(peerId.toString());
+  denyDialMultiaddr = async (_multiaddr: Multiaddr): Promise<boolean> => {
+    const deny = this.shouldDeny(_multiaddr.getPeerId() ?? "");
     if (deny) {
-      log.info({ peerId, filter: "denyDialMultiaddr" }, "denied a connection");
+      log.info(
+        { _multiaddr, filter: "denyDialMultiaddr" },
+        "denied a connection"
+      );
     }
     return deny;
   };
 
-  denyInboundConnection = async (_maConn: MultiaddrConnection): Promise<boolean> => {
+  denyInboundConnection = async (
+    _maConn: MultiaddrConnection
+  ): Promise<boolean> => {
     /** PeerId may not be known yet, let it pass and other filters will catch it. */
     return false;
   };
 
-  denyOutboundConnection = async (peerId: PeerId, _maConn: MultiaddrConnection): Promise<boolean> => {
+  denyOutboundConnection = async (
+    peerId: PeerId,
+    _maConn: MultiaddrConnection
+  ): Promise<boolean> => {
     const deny = this.shouldDeny(peerId.toString());
     if (deny) {
-      log.info({ peerId, filter: "denyOutboundConnection" }, "denied a connection");
+      log.info(
+        { peerId, filter: "denyOutboundConnection" },
+        "denied a connection"
+      );
     }
     return deny;
   };
 
-  denyInboundEncryptedConnection = async (peerId: PeerId, _maConn: MultiaddrConnection): Promise<boolean> => {
+  denyInboundEncryptedConnection = async (
+    peerId: PeerId,
+    _maConn: MultiaddrConnection
+  ): Promise<boolean> => {
     const deny = this.shouldDeny(peerId.toString());
     if (deny) {
-      log.info({ peerId, filter: "denyInboundEncryptedConnection" }, "denied a connection");
+      log.info(
+        { peerId, filter: "denyInboundEncryptedConnection" },
+        "denied a connection"
+      );
     }
     return deny;
   };
 
-  denyOutboundEncryptedConnection = async (peerId: PeerId, _maConn: MultiaddrConnection): Promise<boolean> => {
+  denyOutboundEncryptedConnection = async (
+    peerId: PeerId,
+    _maConn: MultiaddrConnection
+  ): Promise<boolean> => {
     const deny = this.shouldDeny(peerId.toString());
     if (deny) {
-      log.info({ peerId, filter: "denyOutboundEncryptedConnection" }, "denied a connection");
+      log.info(
+        { peerId, filter: "denyOutboundEncryptedConnection" },
+        "denied a connection"
+      );
     }
     return deny;
   };
 
-  denyInboundUpgradedConnection = async (peerId: PeerId, _maConn: MultiaddrConnection): Promise<boolean> => {
+  denyInboundUpgradedConnection = async (
+    peerId: PeerId,
+    _maConn: MultiaddrConnection
+  ): Promise<boolean> => {
     const deny = this.shouldDeny(peerId.toString());
     if (deny) {
-      log.info({ peerId, filter: "denyInboundUpgradedConnection" }, "denied a connection");
+      log.info(
+        { peerId, filter: "denyInboundUpgradedConnection" },
+        "denied a connection"
+      );
     }
     return deny;
   };
 
-  denyOutboundUpgradedConnection = async (peerId: PeerId, _maConn: MultiaddrConnection): Promise<boolean> => {
+  denyOutboundUpgradedConnection = async (
+    peerId: PeerId,
+    _maConn: MultiaddrConnection
+  ): Promise<boolean> => {
     const deny = this.shouldDeny(peerId.toString());
     if (deny) {
-      log.info({ peerId, filter: "denyOutboundUpgradedConnection" }, "denied a connection");
+      log.info(
+        { peerId, filter: "denyOutboundUpgradedConnection" },
+        "denied a connection"
+      );
     }
     return deny;
   };
