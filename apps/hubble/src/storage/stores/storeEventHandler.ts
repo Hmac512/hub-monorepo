@@ -72,7 +72,16 @@ export type StoreUsage = {
   earliestHash: Uint8Array;
 };
 
+export interface NewCastInterface {
+  castHash: Uint8Array;
+  fid: number;
+  signature: Uint8Array;
+  signer: Uint8Array;
+}
+
 export type StoreEvents = {
+  newCast: (event: NewCastInterface) => void;
+
   /**
    * mergeMessage is emitted when a message is merged into one of the stores. If
    * messages are deleted as part of the merge transaction (i.e. due to conflicts between
@@ -418,6 +427,16 @@ class StoreEventHandler extends TypedEmitter<StoreEvents> {
   private broadcastEvent(event: HubEvent): HubResult<void> {
     if (isMergeMessageHubEvent(event)) {
       this.emit("mergeMessage", event);
+
+      if (event.mergeMessageBody.message.data?.castAddBody !== undefined) {
+        const newEvent: NewCastInterface = {
+          castHash: event.mergeMessageBody.message.hash,
+          fid: event.mergeMessageBody.message.data.fid,
+          signature: event.mergeMessageBody.message.signature,
+          signer: event.mergeMessageBody.message.signer,
+        };
+        this.emit("newCast", newEvent);
+      }
     } else if (isPruneMessageHubEvent(event)) {
       this.emit("pruneMessage", event);
     } else if (isRevokeMessageHubEvent(event)) {
